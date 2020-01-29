@@ -15,7 +15,7 @@ using namespace std::chrono;
 // create matrices of size SIZExSIZE
 const int SIZE = 128;
 
-// device multiply func
+// kernel multiply func
 __global__ void multiply(bool *a, bool *b, int *c)
 {
 	int xIdx = blockIdx.x, yIdx = threadIdx.x;
@@ -51,14 +51,14 @@ int main()
 	cudaMalloc((void**)&bd, boolSize);
 	cudaMalloc((void**)&cd, intSize);
 
-	// copy a, b, and c to device memory
+	// copy a and b to device memory
 	cudaMemcpy(ad, a, boolSize, cudaMemcpyHostToDevice);
 	cudaMemcpy(bd, b, boolSize, cudaMemcpyHostToDevice);
 
 	// call multiply func
 	multiply<<<SIZE, SIZE>>>(ad, bd, cd);
 
-	// copy memory back to host
+	// copy device memory back to host
 	cudaMemcpy(c, cd, intSize, cudaMemcpyDeviceToHost);
 
 	// print out final matrix
@@ -69,7 +69,7 @@ int main()
 		cout << endl;
 	}
 
-	// free all memory
+	// free all device memory
 	cudaFree(ad); cudaFree(bd); cudaFree(cd);
 
 	return 0;
