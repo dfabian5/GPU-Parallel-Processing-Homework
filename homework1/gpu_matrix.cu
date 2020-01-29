@@ -12,18 +12,15 @@
 using std::cout; using std::endl;
 using namespace std::chrono;
 
-const int SIZE = 16;
+// create matrices of size SIZExSIZE
+const int SIZE = 128;
 
 // device multiply func
 __global__ void multiply(bool *a, bool *b, int *c)
 {
-	printf("d");
-
-	int xIdx = threadIdx.x, yIdx = threadIdx.y;
+	int xIdx = blockIdx.x, yIdx = threadIdx.x;
 	for (int i = 0; i < SIZE; ++i)
-	{
-		c[xIdx * SIZE + yIdx] += a[xIdx * SIZE + i] * b[i * SIZE + yIdx];
-	}
+		c[xIdx * SIZE + yIdx] += a[xIdx * SIZE + i] * b[i * SIZE + yIdx];	
 }
 
 int main()
@@ -33,15 +30,15 @@ int main()
 	int c[SIZE][SIZE], *cd;
 
 	// create rng
-	unsigned seed = system_clock::now().time_since_epoch().count();
+	unsigned int seed = system_clock::now().time_since_epoch().count();
 	std::default_random_engine generator(seed);
 	std::uniform_int_distribution<int> dist(0, 1);
 
 	// init matrices
 	for (int i = 0; i < SIZE; ++i) for (int j = 0; j < SIZE; ++j)
 	{
-		a[i][j] = 1;//dist(generator);
-		b[i][j] = 1;//dist(generator);
+		a[i][j] = dist(generator);
+		b[i][j] = dist(generator);
 		c[i][j] = 0;
 	}
 
@@ -55,21 +52,20 @@ int main()
 	cudaMalloc((void**)&cd, intSize);
 
 	// copy a, b, and c to device memory
-	cudaMemcpy(ad, &a, boolSize, cudaMemcpyHostToDevice);
-	cudaMemcpy(bd, &b, boolSize, cudaMemcpyHostToDevice);
+	cudaMemcpy(ad, a, boolSize, cudaMemcpyHostToDevice);
+	cudaMemcpy(bd, b, boolSize, cudaMemcpyHostToDevice);
 
 	// call multiply func
-	dim3 dimBlock(SIZE, SIZE);
-	multiply<<<1, dimBlock>>>(ad, bd, cd);
+	multiply<<<SIZE, SIZE>>>(ad, bd, cd);
 
 	// copy memory back to host
-	cudaMemcpy(&c, cd, intSize, cudaMemcpyDeviceToHost);
+	cudaMemcpy(c, cd, intSize, cudaMemcpyDeviceToHost);
 
 	// print out final matrix
 	for (int i = 0; i < SIZE; ++i) 
 	{
 		for (int j = 0; j < SIZE; ++j)
-			cout << c[i][j];
+			cout << c[i][j] << ' ';
 		cout << endl;
 	}
 

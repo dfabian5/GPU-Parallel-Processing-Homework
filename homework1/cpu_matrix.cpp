@@ -12,7 +12,10 @@
 using std::cout; using std::endl;
 using namespace std::chrono;
 
-const int SIZE = 16;
+// create matrices of size SIZExSIZE
+const int SIZE = 128;
+
+typedef high_resolution_clock Clock;
 
 void multiply(bool a[][SIZE], bool b[][SIZE], int c[][SIZE])
 {
@@ -40,7 +43,9 @@ int main()
     }
 
     // multiply
+    auto ti = Clock::now();
     multiply(a, b, c);
+    auto tf = Clock::now();
 
     // print out answer
     for (int i = 0; i < SIZE; ++i) 
@@ -49,4 +54,9 @@ int main()
             cout << c[i][j] << ' ';
         cout << endl;
     }
+
+    // print out computation time
+    cout << "Computation took "
+		<< duration_cast<nanoseconds>(tf - ti).count()
+		<< " nanooseconds" << endl;
 }
