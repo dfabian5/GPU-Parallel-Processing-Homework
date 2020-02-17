@@ -5,12 +5,14 @@
 // AUTHOR:      Dan Fabian
 // DATE:        2/16/2020
 
+#include <cooperative_groups.h>
 #include <iostream>
 #include <random>
 #include <chrono>
 
 using std::cout; using std::endl; using std::cin;
 using namespace std::chrono;
+using namespace cooperative_groups;
 
 const int NUM_OF_VALS = 10, N = 3, NUM_OF_AVG = NUM_OF_VALS - N + 1;
 
@@ -22,11 +24,12 @@ __global__ void movingAvg(int *vals, float *avg)
     {
         int avgIdx = idx - N + 1 + i;
         if (avgIdx >= 0 && avgIdx < NUM_OF_AVG)
-            avg[idx - N + 1 + i] += vals[idx];
+            avg[avgIdx] += vals[idx];
     }
 
     // make sure all threads are done adding to averages before dividing
-    __syncthreads();
+    grid_group g = this_grid();
+    g.sync();
 
     // divide by N
     if (idx < NUM_OF_AVG)
@@ -42,7 +45,6 @@ int main()
     cout << "Enter Block X Dim: ";
     int blockDim; cin >> blockDim;
 
-
     // create arrays of vals
     int vals[NUM_OF_VALS], *vals_d;
     float avg[NUM_OF_AVG], *avg_d;
@@ -50,7 +52,7 @@ int main()
     // create rng
 	unsigned int seed = system_clock::now().time_since_epoch().count();
 	std::default_random_engine generator(seed);
-	std::uniform_int_distribution<int> dist(0, 10);
+	std::uniform_int_distribution<int> dist(0, 5);
 
     // init vals
     for (int i = 0; i < NUM_OF_VALS; ++i)
@@ -90,6 +92,4 @@ int main()
 
     // free all device memory
     cudaFree(vals_d); cudaFree(avg_d); 
-
-    
 }
