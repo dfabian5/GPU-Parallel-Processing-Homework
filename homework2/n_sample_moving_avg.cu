@@ -1,39 +1,40 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 // FILE:        n_sample_moving_avg.cu
-// DESCRIPTION: runs N Sample Moving Average Filtering algorithm on gpu for 10000 ints
+// DESCRIPTION: runs N Sample Moving Average Filtering algorithm on gpu
 // AUTHOR:      Dan Fabian
 // DATE:        2/16/2020
 
-#include <cooperative_groups.h>
 #include <iostream>
 #include <random>
 #include <chrono>
 
 using std::cout; using std::endl; using std::cin;
 using namespace std::chrono;
-using namespace cooperative_groups;
 
-const int NUM_OF_VALS = 10, N = 3, NUM_OF_AVG = NUM_OF_VALS - N + 1;
+const int NUM_OF_VALS = 10000, N = 256, NUM_OF_AVG = NUM_OF_VALS - N + 1;
 
 // kernal func
 __global__ void movingAvg(int *vals, float *avg)
 {
+    // number of average calculations a single thread performs
+    int avgCalcPerThread = ceilf(float(NUM_OF_AVG) / float(blockDim.x * gridDim.x));
+
+    // thread index
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    for (int i = 0; i < N; ++i)
-    {
-        int avgIdx = idx - N + 1 + i;
-        if (avgIdx >= 0 && avgIdx < NUM_OF_AVG)
-            avg[avgIdx] += vals[idx];
-    }
 
-    // make sure all threads are done adding to averages before dividing
-    grid_group g = this_grid();
-    g.sync();
+    // get first avg val for thread
+    int avgIdx = idx * avgCalcPerThread;
+    for (int i = 0; i < N && avgIdx < NUM_OF_AVG; ++i)
+        avg[avgIdx] += vals[avgIdx + i];
+    avg[avgIdx] /= N;
 
-    // divide by N
-    if (idx < NUM_OF_AVG)
-        avg[idx] /= N;
+    // calculate the rest of avg vals for thread
+    int maxAvgIdx = avgCalcPerThread * (idx + 1);
+    for (avgIdx = idx * avgCalcPerThread + 1; 
+         avgIdx < maxAvgIdx && avgIdx < NUM_OF_AVG; 
+         ++avgIdx)
+        avg[avgIdx] = (avg[avgIdx - 1] * N + vals[avgIdx + N - 1] - vals[avgIdx - 1]) / N;
 }
 
 int main()
@@ -80,6 +81,7 @@ int main()
     // copy device memory back to host
     cudaMemcpy(avg, avg_d, avgMem, cudaMemcpyDeviceToHost);
 
+    /*
     // print vals
     for (int i = 0; i < NUM_OF_VALS; ++i)
         cout << vals[i] << ' ';
@@ -89,6 +91,7 @@ int main()
     for (int i = 0; i < NUM_OF_AVG; ++i)
         cout << avg[i] << ' ';
     cout << endl;
+    */
 
     // free all device memory
     cudaFree(vals_d); cudaFree(avg_d); 
