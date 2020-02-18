@@ -12,6 +12,7 @@
 using std::cout; using std::endl; using std::cin;
 using namespace std::chrono;
 
+// all constants
 const int NUM_OF_VALS = 10000, N = 256, NUM_OF_AVG = NUM_OF_VALS - N + 1;
 
 // kernal func
@@ -39,21 +40,14 @@ __global__ void movingAvg(int *vals, float *avg)
 
 int main()
 {
-    // ask user for grid and block dims, must multiply together to get NUM_OF_VALS
-    cout << "Enter Grid X Dim: ";
-    int gridDim; cin >> gridDim;
-
-    cout << "Enter Block X Dim: ";
-    int blockDim; cin >> blockDim;
-
     // create arrays of vals
     int vals[NUM_OF_VALS], *vals_d;
     float avg[NUM_OF_AVG], *avg_d;
 
     // create rng
-	unsigned int seed = system_clock::now().time_since_epoch().count();
-	std::default_random_engine generator(seed);
-	std::uniform_int_distribution<int> dist(0, 5);
+    unsigned int seed = system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator(seed);
+    std::uniform_int_distribution<int> dist(0, 5);
 
     // init vals
     for (int i = 0; i < NUM_OF_VALS; ++i)
@@ -75,6 +69,13 @@ int main()
     cudaMemcpy(vals_d, vals, valMem, cudaMemcpyHostToDevice);
     cudaMemcpy(avg_d, avg, avgMem, cudaMemcpyHostToDevice);
     
+    // ask user for grid and block dims
+    cout << "Enter Grid X Dim: ";
+    int gridDim; cin >> gridDim;
+
+    cout << "Enter Block X Dim: ";
+    int blockDim; cin >> blockDim;
+
     // call func
     movingAvg<<<gridDim, blockDim>>>(vals_d, avg_d);
 
