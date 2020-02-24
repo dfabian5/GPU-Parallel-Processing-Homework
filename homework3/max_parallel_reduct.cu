@@ -20,7 +20,6 @@ __global__ void globalMax(int *vals); // uses global mem
 __global__ void interleavingMax(int *vals); // uses interleaving addressing shared mem
 __global__ void sequentialMax(int *vals); // uses sequential addressing shared mem
 
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // MAIN
