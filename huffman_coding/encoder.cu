@@ -204,6 +204,10 @@ void Encoder::output(const string& in, const string& out)
     for (unsigned char c; input >> std::noskipws >> c;)
         for (int i = 0; i < encodingLength_[c]; ++i)
             output << dict_[c][i];
+
+    // close streams
+    input.close();
+    output.close();
 }
 
 
