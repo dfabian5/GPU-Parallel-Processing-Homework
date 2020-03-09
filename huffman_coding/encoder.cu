@@ -88,34 +88,25 @@ void Encoder::buildTree()
     for (int i = 0; i < SIZE; ++i) 
         first.push(new Node(sorted_[i], frequency_[sorted_[i]]));
 
+    // pop and return func
+    auto pop = [&](queue<Node*> &q) {
+        Node *tmp = q.front();
+        q.pop();
+        return tmp;
+    };
+
     // lambda to find min
     auto min = [&]() {
-        Node *tmp = nullptr;
-
         // check if queues are empty
         if (!first.empty() && second.empty())
-        {
-            tmp = first.front();
-            first.pop();
-        }
+            return pop(first);
         else if (first.empty() && !second.empty())
-        {
-            tmp = second.front();
-            second.pop();
-        }
+            return pop(second);
         // if both queues arent empty
         else if (first.front()->freq_ < second.front()->freq_)
-        {
-            tmp = first.front();
-            first.pop();
-        }
+            return pop(first);
         else 
-        {
-            tmp = second.front();
-            second.pop();
-        }
-
-        return tmp;
+            return pop(second);
     };
 
     // begin building
